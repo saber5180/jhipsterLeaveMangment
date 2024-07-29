@@ -1,0 +1,50 @@
+application {
+  config {
+    baseName LeaveManagement
+    applicationType monolith
+    packageName com.mycompany.myapp
+    authenticationType jwt
+    databaseType sql
+    devDatabaseType h2Disk
+    prodDatabaseType mysql
+    buildTool gradle
+    clientFramework react
+  }
+}
+
+entity Leave {
+  title String required
+  description String
+  fromDate LocalDate required
+  toDate LocalDate required
+  status LeaveStatus required
+}
+
+entity Department {
+  name String required
+  description String
+}
+
+entity Employee {
+  firstName String required
+  lastName String required
+  hireDate LocalDate required
+}
+
+enum LeaveStatus {
+  REQUESTED
+  REJECTED
+  APPROVED
+}
+
+relationship ManyToOne {
+  Leave{employee(login)} to Employee with builtInEntity
+  Employee{department(name)} to Department
+}
+
+relationship OneToOne {
+  User{employee} to Employee
+}
+
+paginate Leave, Department, Employee with pagination
+dto * with mapstruct
