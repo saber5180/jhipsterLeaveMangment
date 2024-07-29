@@ -1,0 +1,29 @@
+{
+  "leaveManagementv16App": {
+    "leave": {
+      "home": {
+        "title": "Leaves",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Leave",
+        "createOrEditLabel": "Créer ou éditer un Leave",
+        "notFound": "Aucun Leave trouvé"
+      },
+      "created": "Un nouveau Leave a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Leave avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Leave avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Leave {{ id }} ?"
+      },
+      "detail": {
+        "title": "Leave"
+      },
+      "id": "ID",
+      "title": "Title",
+      "description": "Description",
+      "fromDate": "From Date",
+      "toDate": "To Date",
+      "status": "Status",
+      "employee": "Employee"
+    }
+  }
+}

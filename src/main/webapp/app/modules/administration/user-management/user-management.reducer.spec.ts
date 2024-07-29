@@ -2,8 +2,8 @@ import { configureStore } from '@reduxjs/toolkit';
 import axios from 'axios';
 import sinon from 'sinon';
 
-import { defaultValue } from 'app/shared/model/user.model';
-import { AUTHORITIES } from 'app/config/constants';
+import { defaultValue } from '../../../shared/model/user.model';
+import { AUTHORITIES } from '../../../config/constants';
 import userManagement, {
   getUsers,
   getUsersAsAdmin,

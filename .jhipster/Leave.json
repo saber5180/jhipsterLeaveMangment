@@ -1,0 +1,48 @@
+{
+  "annotations": {
+    "changelogDate": "20240729165630"
+  },
+  "applications": ["LeaveManagementv16"],
+  "dto": "mapstruct",
+  "entityTableName": "jhi_leave",
+  "fields": [
+    {
+      "fieldName": "title",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "description",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "fromDate",
+      "fieldType": "LocalDate",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "toDate",
+      "fieldType": "LocalDate",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "status",
+      "fieldType": "LeaveStatus",
+      "fieldValidateRules": ["required"],
+      "fieldValues": "REQUESTED,REJECTED,APPROVED"
+    }
+  ],
+  "name": "Leave",
+  "pagination": "pagination",
+  "relationships": [
+    {
+      "otherEntityField": "firstName",
+      "otherEntityName": "employee",
+      "relationshipName": "employee",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceImpl"
+}

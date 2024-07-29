@@ -1,6 +1,6 @@
 application {
   config {
-    baseName LeaveManagement
+    baseName LeaveManagementv16
     applicationType monolith
     packageName com.mycompany.myapp
     authenticationType jwt
@@ -10,6 +10,7 @@ application {
     buildTool gradle
     clientFramework react
   }
+  entities Leave, Department, Employee
 }
 
 entity Leave {
@@ -28,6 +29,7 @@ entity Department {
 entity Employee {
   firstName String required
   lastName String required
+  email String required
   hireDate LocalDate required
 }
 
@@ -38,13 +40,14 @@ enum LeaveStatus {
 }
 
 relationship ManyToOne {
-  Leave{employee(login)} to Employee with builtInEntity
+  Leave{employee(firstName)} to Employee
   Employee{department(name)} to Department
 }
 
 relationship OneToOne {
-  User{employee} to Employee
+  Employee{user(login)} to User with builtInEntity
 }
 
 paginate Leave, Department, Employee with pagination
 dto * with mapstruct
+service * with serviceImpl
