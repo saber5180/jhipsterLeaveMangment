@@ -48,9 +48,14 @@ export const getUser = createAsyncThunk(
 export const createUser = createAsyncThunk(
   'userManagement/create_user',
   async (user: IUser, thunkAPI) => {
-    const result = await axios.post<IUser>(adminUrl, user);
-    thunkAPI.dispatch(getUsersAsAdmin({}));
-    return result;
+    try {
+      const result = await axios.post<IUser>(adminUrl, user);
+      thunkAPI.dispatch(getUsersAsAdmin({}));
+      return result.data; // Return the actual user data
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
   },
   { serializeError: serializeAxiosError },
 );
@@ -60,7 +65,7 @@ export const updateUser = createAsyncThunk(
   async (user: IUser, thunkAPI) => {
     const result = await axios.put<IUser>(adminUrl, user);
     thunkAPI.dispatch(getUsersAsAdmin({}));
-    return result;
+    return result.data; // Return the actual user data
   },
   { serializeError: serializeAxiosError },
 );
@@ -71,7 +76,7 @@ export const deleteUser = createAsyncThunk(
     const requestUrl = `${adminUrl}/${id}`;
     const result = await axios.delete<IUser>(requestUrl);
     thunkAPI.dispatch(getUsersAsAdmin({}));
-    return result;
+    return result.data; // Return the actual user data
   },
   { serializeError: serializeAxiosError },
 );
@@ -109,7 +114,7 @@ export const UserManagementSlice = createSlice({
         state.updating = false;
         state.loading = false;
         state.updateSuccess = true;
-        state.user = action.payload.data;
+        state.user = action.payload; // Assign the user data directly
       })
       .addMatcher(isPending(getUsers, getUsersAsAdmin, getUser), state => {
         state.errorMessage = null;

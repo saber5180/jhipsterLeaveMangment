@@ -6,11 +6,12 @@ export interface IUser {
   email?: string;
   activated?: boolean;
   langKey?: string;
-  authorities?: any[];
+  authorities?: string[];
   createdBy?: string;
-  createdDate?: Date | null;
+  createdDate?: Date;
   lastModifiedBy?: string;
-  lastModifiedDate?: Date | null;
+  lastModifiedDate?: Date;
+  imageUrl?: any;
   password?: string;
 }
 
@@ -28,4 +29,5 @@ export const defaultValue: Readonly<IUser> = {
   lastModifiedBy: '',
   lastModifiedDate: null,
   password: '',
+  imageUrl: null, // Add this line
 };

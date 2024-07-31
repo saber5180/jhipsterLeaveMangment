@@ -156,7 +156,7 @@ export const UserManagement = () => {
               <td>
                 {user.activated ? (
                   <Button color="success" onClick={toggleActive(user)}>
-                    <Translate contentKey="userManagement.activated">Activated</Translate>
+                    Activated
                   </Button>
                 ) : (
                   <Button color="danger" onClick={toggleActive(user)}>

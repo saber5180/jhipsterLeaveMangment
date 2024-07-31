@@ -14,6 +14,15 @@ public class UserDTO implements Serializable {
     private Long id;
 
     private String login;
+    private boolean activated;
+
+    public boolean isActivated() {
+        return activated;
+    }
+
+    public void setActivated(boolean activated) {
+        this.activated = activated;
+    }
 
     public UserDTO() {
         // Empty constructor needed for Jackson.

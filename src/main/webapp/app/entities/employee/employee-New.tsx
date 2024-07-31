@@ -3,109 +3,136 @@ import { Button, Form, FormGroup, Label, Input, Row, Col } from 'reactstrap';
 import { Translate, translate } from 'react-jhipster';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useAppDispatch, useAppSelector } from 'app/config/store';
-
-import { createEntity } from './employee.reducer';
+import { createEntity as createEmployee } from './employee.reducer';
 import { createUser } from 'app/modules/administration/user-management/user-management.reducer';
-import { getEntities } from '../department/department.reducer';
+import { getEntities as getDepartments } from '../department/department.reducer';
 import dayjs from 'dayjs';
+import { IUser } from 'app/shared/model/user.model';
+import { defaultValue as defaultUser } from 'app/shared/model/user.model';
+import { IDepartment } from 'app/shared/model/department.model';
 
 interface UserActionResult {
-  payload: {
-    id: number | string;
-    login: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    activated: boolean;
-    langKey: string;
-    authorities: string[];
-  };
+  payload: IUser;
 }
 
 const UserEmployeeForm = () => {
   const dispatch = useAppDispatch();
 
-  const [userData, setUserData] = useState({
-    login: '',
-    email: '',
+  const [employeeData, setEmployeeData] = useState({
     firstName: '',
     lastName: '',
+    email: '',
+    hireDate: dayjs(),
+    department: null as IDepartment | null,
+  });
+
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const departments = useAppSelector(state => state.department.entities);
+  const loading = useAppSelector(state => state.userManagement.loading || state.employee.loading);
+
+  const [userData, setUserData] = useState<IUser>({
+    ...defaultUser,
     activated: true,
     langKey: 'en',
     authorities: ['ROLE_USER'],
   });
 
-  const [employeeData, setEmployeeData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    hireDate: '',
-    departmentId: '',
-  });
-
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
-
-  const departments = useAppSelector(state => state.department.entities);
-  const loading = useAppSelector(state => state.userManagement.loading || state.employee.loading);
-
   useEffect(() => {
-    dispatch(getEntities({}));
+    dispatch(getDepartments({}));
   }, [dispatch]);
 
   const handleUserChange = event => {
     const { name, value } = event.target;
-    setUserData({ ...userData, [name]: value });
+    setUserData(prevState => ({ ...prevState, [name]: value }));
     if (name === 'firstName' || name === 'lastName' || name === 'email') {
-      setEmployeeData({ ...employeeData, [name]: value });
+      setEmployeeData(prevState => ({ ...prevState, [name]: value }));
     }
   };
 
   const handleEmployeeChange = event => {
     const { name, value } = event.target;
-    setEmployeeData({ ...employeeData, [name]: value });
+    if (name === 'hireDate') {
+      setEmployeeData(prevState => ({ ...prevState, hireDate: dayjs(value) }));
+    } else if (name === 'department') {
+      const selectedDepartment = departments.find(dept => dept.id.toString() === value);
+      setEmployeeData(prevState => ({ ...prevState, department: selectedDepartment || null }));
+    } else {
+      setEmployeeData(prevState => ({ ...prevState, [name]: value }));
+    }
   };
 
   const handleRoleChange = event => {
     const { value, checked } = event.target;
     const newAuthorities = checked ? [...userData.authorities, value] : userData.authorities.filter(authority => authority !== value);
-    setUserData({ ...userData, authorities: newAuthorities });
+    setUserData(prevState => ({ ...prevState, authorities: newAuthorities }));
   };
 
-  const handleSubmit = async event => {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setSelectedFile(file || null);
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        if (result) {
+          setImagePreview(result);
+          // Instead of setting imageUrl directly, we'll store the file itself
+          setUserData(prevState => ({
+            ...prevState,
+            // Store the file object instead of the data URL
+            imageUrl: file,
+          }));
+        }
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImagePreview(null);
+      setUserData(prevState => ({
+        ...prevState,
+        imageUrl: undefined,
+      }));
+    }
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSuccess(false);
     setError('');
 
+    if (!employeeData.department) {
+      setError('Department is required');
+      return;
+    }
+
     try {
+      // Create a FormData object to send the file
+      const formData = new FormData();
+      Object.keys(userData).forEach(key => {
+        if (key === 'imageUrl' && userData[key] instanceof File) {
+          formData.append('file', userData[key] as File);
+        } else {
+          formData.append(key, userData[key] as string);
+        }
+      });
+
+      // Dispatch the createUser action with FormData
       const resultAction = (await dispatch(createUser(userData))) as UserActionResult;
       const user = resultAction.payload;
 
       if (user && user.id) {
         await dispatch(
-          createEntity({
+          createEmployee({
             ...employeeData,
-            hireDate: dayjs(employeeData.hireDate),
+            hireDate: employeeData.hireDate,
             user: { id: user.id },
+            department: employeeData.department,
           }),
         );
         setSuccess(true);
-        setUserData({
-          login: '',
-          email: '',
-          firstName: '',
-          lastName: '',
-          activated: true,
-          langKey: 'en',
-          authorities: ['ROLE_USER'],
-        });
-        setEmployeeData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          hireDate: '',
-          departmentId: '',
-        });
+        resetForm();
       } else {
         throw new Error('User creation failed: No valid user data returned');
       }
@@ -113,6 +140,23 @@ const UserEmployeeForm = () => {
       console.error('Error details:', err);
       setError('Error creating user and employee: ' + (err instanceof Error ? err.message : String(err)));
     }
+  };
+
+  const resetForm = () => {
+    setUserData({
+      ...defaultUser,
+      activated: true,
+      langKey: 'en',
+      authorities: ['ROLE_USER'],
+    });
+    setEmployeeData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      hireDate: dayjs(),
+      department: null,
+    });
+    setSelectedFile(null);
   };
 
   return (
@@ -159,6 +203,17 @@ const UserEmployeeForm = () => {
               <Input id="lastName" name="lastName" value={userData.lastName} onChange={handleUserChange} required />
             </FormGroup>
             <FormGroup>
+              <Label for="imageUpload">
+                <Translate contentKey="userManagement.imageUpload">Upload Image</Translate>
+              </Label>
+              <Input id="imageUpload" name="imageUpload" type="file" accept="image/*" onChange={handleFileChange} />
+              {imagePreview && (
+                <div className="mt-2">
+                  <img src={imagePreview} alt="User avatar preview" style={{ maxWidth: '100px', maxHeight: '100px' }} />
+                </div>
+              )}
+            </FormGroup>
+            <FormGroup>
               <Label for="langKey">
                 <Translate contentKey="userManagement.langKey">Language Key</Translate>
               </Label>
@@ -172,33 +227,45 @@ const UserEmployeeForm = () => {
               <div>
                 <Input type="hidden" value="ROLE_USER" checked={userData.authorities.includes('ROLE_USER')} onChange={handleRoleChange} />
               </div>
-
               {/* Add other roles as needed */}
             </FormGroup>
             <FormGroup>
               <Label for="hireDate">
                 <Translate contentKey="employee.hireDate">Hire Date</Translate>
               </Label>
-              <Input id="hireDate" name="hireDate" type="date" value={employeeData.hireDate} onChange={handleEmployeeChange} required />
+              <Input
+                id="hireDate"
+                name="hireDate"
+                type="date"
+                value={employeeData.hireDate.format('YYYY-MM-DD')}
+                onChange={handleEmployeeChange}
+                required
+              />
             </FormGroup>
             <FormGroup>
-              <Label for="departmentId">
+              <Label for="department">
                 <Translate contentKey="employee.department">Department</Translate>
               </Label>
               <Input
-                id="departmentId"
-                name="departmentId"
+                id="department"
+                name="department"
                 type="select"
-                value={employeeData.departmentId}
+                value={employeeData.department ? employeeData.department.id : ''}
                 onChange={handleEmployeeChange}
                 required
               >
                 <option value="">{translate('userEmployeeForm.selectDepartment')}</option>
-                {departments.map(department => (
-                  <option key={department.id} value={department.id}>
-                    {department.name}
+                {departments && departments.length > 0 ? (
+                  departments.map((department: IDepartment) => (
+                    <option key={department.id} value={department.id}>
+                      {department.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>
+                    No departments available
                   </option>
-                ))}
+                )}
               </Input>
             </FormGroup>
             <Button color="primary" type="submit" disabled={loading}>
